@@ -164,7 +164,7 @@ class BertTokenizer(PreTrainedTokenizer):
             self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case,
                                                   never_split=never_split,
                                                   tokenize_chinese_chars=tokenize_chinese_chars)
-        self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab, unk_token=self.unk_token)
+        self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab, unk_token=self.unk_token, never_split=never_split)
 
     @property
     def vocab_size(self):
@@ -405,12 +405,13 @@ class BasicTokenizer(object):
 class WordpieceTokenizer(object):
     """Runs WordPiece tokenization."""
 
-    def __init__(self, vocab, unk_token, max_input_chars_per_word=100):
+    def __init__(self, vocab, unk_token, max_input_chars_per_word=100, never_split=None):
         self.vocab = vocab
         self.unk_token = unk_token
         self.max_input_chars_per_word = max_input_chars_per_word
+        self.never_split = never_split
 
-    def tokenize(self, text):
+    def tokenize(self, text, never_split=None):
         """Tokenizes a piece of text into its word pieces.
 
         This uses a greedy longest-match-first algorithm to perform tokenization
@@ -427,6 +428,9 @@ class WordpieceTokenizer(object):
         Returns:
           A list of wordpiece tokens.
         """
+        never_split = (self.never_split or []) + (never_split or [])
+        if text in never_split:
+            return [text]
 
         output_tokens = []
         for token in whitespace_tokenize(text):
